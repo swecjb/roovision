@@ -36,7 +36,9 @@ class Config:
     # Performance tuning
     MAX_READ_BYTES: int = int(os.getenv('MAX_READ_BYTES', 5242880))  # 5 MB
     OVERLAP_BYTES: int = int(os.getenv('OVERLAP_BYTES', 2048))  # 2 KB
-    DEBOUNCE_SECONDS: float = float(os.getenv('DEBOUNCE_SECONDS', 0.5))
+    # Debounce: wait time after file change before processing
+    # Higher value (3s) helps when LLM is still streaming response
+    DEBOUNCE_SECONDS: float = float(os.getenv('DEBOUNCE_SECONDS', 3.0))
     
     # File age filter (0 = disabled, track all files)
     MAX_FILE_AGE_DAYS: int = int(os.getenv('MAX_FILE_AGE_DAYS', 7))

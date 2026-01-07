@@ -56,16 +56,24 @@ class ChangelogProcessor:
         self._stats['files_processed'] += 1
         
         # Get new content with overlap
-        result = file_tracker.get_new_content(filepath)
+        read_result = file_tracker.get_new_content(filepath)
         
-        if result is None:
+        if read_result is None:
             return  # No new content or first initialization
         
-        content, read_start, last_position = result
+        content, read_start, last_position = read_result
         
         # Find all complete subtask entries in the new content
         # Pass filepath so parser can read more of the file if instruction isn't in buffer
-        entries = parser.find_all_complete_subtasks(content, read_start, last_position, filepath)
+        parse_result = parser.find_all_complete_subtasks(content, read_start, last_position, filepath)
+        
+        # If there are incomplete patterns (file still being written), track them
+        # so we can re-check from that position on the next file change
+        if parse_result.first_incomplete_position is not None:
+            file_tracker.set_pending_position(filepath, parse_result.first_incomplete_position)
+            print(f"[MAIN] Incomplete pattern detected - will re-check on next change")
+        
+        entries = parse_result.entries
         
         if not entries:
             return

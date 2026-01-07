@@ -23,6 +23,15 @@ class SubtaskEntry:
     result_end_position: int
 
 
+@dataclass
+class ParseResult:
+    """Result of parsing content for subtask entries."""
+    entries: List['SubtaskEntry']
+    # Absolute position of first incomplete pattern (found start but no end)
+    # None if all patterns were complete
+    first_incomplete_position: Optional[int] = None
+
+
 class Parser:
     """
     Parses conversation history JSON content to extract subtask entries.
@@ -57,7 +66,7 @@ class Parser:
         read_start: int,
         last_position: int,
         filepath: str = None
-    ) -> List[SubtaskEntry]:
+    ) -> ParseResult:
         """
         Find all complete subtask entries in the content.
         
@@ -68,9 +77,10 @@ class Parser:
             filepath: Path to the file (for reading more content if needed)
         
         Returns:
-            List of SubtaskEntry objects for all NEW complete subtasks found
+            ParseResult with list of complete entries and info about incomplete patterns
         """
         entries = []
+        first_incomplete_position = None
         
         # Debug: Show what we're searching
         print(f"[PARSER] Searching {len(content)} bytes (read_start={read_start}, last_position={last_position})")
@@ -82,6 +92,7 @@ class Parser:
         for match in all_matches:
             subtask_id = match.group(1)
             result_content_start = match.end()
+            absolute_match_position = read_start + match.start()
             print(f"[PARSER]   Examining subtask {subtask_id} at content offset {match.start()}")
             
             # Find the end marker AFTER this result start
@@ -99,10 +110,16 @@ class Parser:
                     if result_data:
                         result_content, absolute_end_position = result_data
                     else:
-                        print(f"[PARSER]   -> No end marker found even after reading file, skipping")
+                        # Track this as incomplete pattern - file is still being written
+                        print(f"[PARSER]   -> No end marker found (file may still be writing), marking as incomplete")
+                        if first_incomplete_position is None:
+                            first_incomplete_position = absolute_match_position
                         continue
                 else:
-                    print(f"[PARSER]   -> No end marker found, skipping")
+                    # Track this as incomplete pattern
+                    print(f"[PARSER]   -> No end marker found, marking as incomplete")
+                    if first_incomplete_position is None:
+                        first_incomplete_position = absolute_match_position
                     continue
             else:
                 # Calculate absolute position of the end marker in the file
@@ -120,7 +137,7 @@ class Parser:
                 # Instruction not in current buffer - need to read more of the file
                 print(f"[PARSER]   -> Instruction not in buffer, reading full file for {subtask_id}")
                 instruction_data = self._find_instruction_in_file(
-                    filepath, 
+                    filepath,
                     read_start + match.start()  # absolute position of result
                 )
             
@@ -140,7 +157,7 @@ class Parser:
             
             print(f"[PARSER] Found complete subtask: {subtask_id} (mode: {mode})")
         
-        return entries
+        return ParseResult(entries=entries, first_incomplete_position=first_incomplete_position)
     
     def _find_result_end_in_file(
         self,

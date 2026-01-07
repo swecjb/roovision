@@ -5,6 +5,25 @@ All notable changes to Roovision will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-01-07
+
+### Fixed
+
+- **LLM streaming detection bug** - Fixed issue where subtasks were skipped when the file was still being written (LLM streaming)
+  - Increased default debounce from 0.5s to 3.0s to give LLM streaming more time to complete
+  - Added "pending patterns" tracking - when a result start is found but no end marker, the position is tracked
+  - On next file change, the parser re-reads from the pending position instead of skipping ahead
+  - This prevents losing patterns when the file is mid-write
+
+### Technical
+
+- Added `ParseResult` dataclass in parser to return both entries AND incomplete pattern information
+- Added `set_pending_position()`, `clear_pending_position()`, `has_pending_position()` methods to file_tracker
+- File tracker now re-reads from pending positions when available
+- Parser tracks `first_incomplete_position` for incomplete patterns
+
+---
+
 ## [1.0.2] - 2026-01-07
 
 ### Fixed
@@ -84,6 +103,7 @@ Each file contains:
 - Original instruction
 - Subtask result
 
+[1.0.3]: https://github.com/swecjb/roovision/releases/tag/v1.0.3
 [1.0.2]: https://github.com/swecjb/roovision/releases/tag/v1.0.2
 [1.0.1]: https://github.com/swecjb/roovision/releases/tag/v1.0.1
 [1.0.0]: https://github.com/swecjb/roovision/releases/tag/v1.0.0

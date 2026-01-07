@@ -29,6 +29,9 @@ class FileTracker:
         self._positions: Dict[str, int] = {}
         # Track when we started monitoring each file
         self._start_times: Dict[str, datetime] = {}
+        # Track files with incomplete patterns - don't advance position past these
+        # {filepath: absolute_position_of_first_incomplete_pattern}
+        self._pending_positions: Dict[str, int] = {}
     
     def initialize_file(self, filepath: str) -> None:
         """
@@ -78,7 +81,15 @@ class FileTracker:
         bytes_to_read = min(new_bytes + config.OVERLAP_BYTES, config.MAX_READ_BYTES)
         
         # Read with overlap (go back OVERLAP_BYTES from last_position)
-        read_start = max(0, last_position - config.OVERLAP_BYTES)
+        # If there's a pending position, go back to that instead
+        pending_pos = self._pending_positions.get(filepath)
+        if pending_pos is not None:
+            read_start = max(0, pending_pos - config.OVERLAP_BYTES)
+            # Clear the pending position - we're re-checking it
+            del self._pending_positions[filepath]
+            print(f"[TRACKER] Re-reading from pending position {pending_pos:,}")
+        else:
+            read_start = max(0, last_position - config.OVERLAP_BYTES)
         
         try:
             with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
@@ -108,6 +119,33 @@ class FileTracker:
     def get_position(self, filepath: str) -> Optional[int]:
         """Get current tracked position for a file."""
         return self._positions.get(filepath)
+    
+    def set_pending_position(self, filepath: str, position: int) -> None:
+        """
+        Set a pending position for a file.
+        
+        This is used when we find patent start but no end marker,
+        indicating the file is still being written. On the next read,
+        we'll go back to this position instead of just using overlap.
+        
+        Args:
+            filepath: Path to the file
+            position: Absolute position where the incomplete pattern starts
+        """
+        # Only set if this position is earlier than any existing pending position
+        existing = self._pending_positions.get(filepath)
+        if existing is None or position < existing:
+            self._pending_positions[filepath] = position
+            print(f"[TRACKER] Set pending position for {Path(filepath).parent.name}/...json at {position:,}")
+    
+    def clear_pending_position(self, filepath: str) -> None:
+        """Clear any pending position for a file (pattern was completed)."""
+        if filepath in self._pending_positions:
+            del self._pending_positions[filepath]
+    
+    def has_pending_position(self, filepath: str) -> bool:
+        """Check if file has a pending position."""
+        return filepath in self._pending_positions
 
 
 # Singleton instance
