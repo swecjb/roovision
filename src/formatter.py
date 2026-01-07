@@ -64,6 +64,49 @@ class Formatter:
         
         return result.strip()
     
+    def adjust_header_levels(self, text: str, min_level: int = 3) -> str:
+        """
+        Adjust markdown header levels to ensure logical flow.
+        
+        All headers in the content will be bumped to at least min_level
+        (default ### for content under ## sections).
+        
+        For example:
+        - # Header becomes ### Header
+        - ## Header becomes ### Header
+        - ### Header stays ### Header
+        - #### Header stays #### Header
+        
+        Args:
+            text: Markdown content that may contain headers
+            min_level: Minimum header level (number of #)
+            
+        Returns:
+            Text with adjusted header levels
+        """
+        if not text:
+            return text
+        
+        lines = text.split('\n')
+        adjusted_lines = []
+        
+        for line in lines:
+            # Check if line starts with markdown header
+            match = re.match(r'^(#{1,6})\s+(.+)$', line)
+            if match:
+                current_hashes = match.group(1)
+                header_text = match.group(2)
+                current_level = len(current_hashes)
+                
+                # If current level is less than minimum, bump it up
+                if current_level < min_level:
+                    new_hashes = '#' * min_level
+                    line = f"{new_hashes} {header_text}"
+            
+            adjusted_lines.append(line)
+        
+        return '\n'.join(adjusted_lines)
+    
     def format_changelog_content(
         self, 
         subtask_id: str, 
@@ -89,8 +132,20 @@ class Formatter:
         clean_instruction = self.unescape_content(instruction)
         clean_result = self.unescape_content(result)
         
-        # Build markdown content
-        markdown = f"""# Task ID: {subtask_id}
+        # Adjust header levels in instruction and result content
+        # Headers inside ## sections should be at least ### (level 3)
+        adjusted_instruction = self.adjust_header_levels(clean_instruction, min_level=3)
+        adjusted_result = self.adjust_header_levels(clean_result, min_level=3)
+        
+        # Build markdown content with proper header hierarchy
+        # # Part of Changelog (top level)
+        # ## Task ID (level 2)
+        # ## Instruction (level 2)
+        # ## Result (level 2)
+        # Content headers inside are ### or deeper
+        markdown = f"""# Part of Changelog
+
+## Task ID: {subtask_id}
 
 **Mode:** {mode}
 **Completed:** {timestamp}
@@ -99,13 +154,13 @@ class Formatter:
 
 ## Instruction
 
-{clean_instruction}
+{adjusted_instruction}
 
 ---
 
 ## Result
 
-{clean_result}
+{adjusted_result}
 """
         
         return markdown

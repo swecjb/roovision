@@ -89,7 +89,9 @@ Each completed subtask creates a markdown file:
 
 **Content format:**
 ```markdown
-# Task ID: 09d0cb0e-5c00-4df2-90cf-f52c4f85bcfc
+# Part of Changelog
+
+## Task ID: 09d0cb0e-5c00-4df2-90cf-f52c4f85bcfc
 
 **Mode:** code
 **Completed:** 2026-01-07T11:30:00.123 UTC
@@ -99,13 +101,17 @@ Each completed subtask creates a markdown file:
 ## Instruction
 
 [The instruction given to the subtask]
+### Sub-headers are auto-adjusted to level 3+
 
 ---
 
 ## Result
 
 [The result returned by the subtask]
+### Any headers in results are also adjusted
 ```
+
+> **Note:** Headers inside instruction/result content are automatically adjusted to level 3 (`###`) or deeper to maintain proper document hierarchy.
 
 ## How It Works
 

@@ -5,6 +5,23 @@ All notable changes to Roovision will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-01-07
+
+### Changed
+
+- **Markdown header hierarchy** - Improved structure for better document organization:
+  - Added `# Part of Changelog` as top-level header in each file
+  - Changed `# Task ID:` to `## Task ID:` (level 2)
+  - Kept `## Instruction` and `## Result` at level 2
+  - Content headers inside instructions/results are auto-adjusted to `###` or deeper to maintain logical flow
+
+### Technical
+
+- Added `adjust_header_levels()` function in formatter to process embedded headers
+- Headers in extracted content are bumped to minimum level 3 to nest properly under the `## Instruction` and `## Result` sections
+
+---
+
 ## [1.0.0] - 2026-01-07
 
 ### Initial Release 🎉
@@ -51,4 +68,5 @@ Each file contains:
 - Original instruction
 - Subtask result
 
+[1.0.1]: https://github.com/swecjb/roovision/releases/tag/v1.0.1
 [1.0.0]: https://github.com/swecjb/roovision/releases/tag/v1.0.0
