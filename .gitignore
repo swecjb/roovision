@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files (keep .env.example, ignore actual .env)
+.env
+
+# Logs (these are auto-generated)
+logs/
+*.log
+*.log.*
+
+# Changelogs output (don't commit generated files)
+changelogs/
+
+# OS files
+.DS_Store
+Thumbs.db

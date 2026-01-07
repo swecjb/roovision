@@ -1,0 +1,5 @@
+# Roo Code Changelogger Dependencies
+# Check existing versions: pip show watchdog python-dotenv
+
+watchdog>=3.0.0       # Cross-platform file system events (event-driven, not polling)
+python-dotenv>=1.0.0  # Environment variable loading from .env files
