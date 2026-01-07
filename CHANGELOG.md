@@ -5,6 +5,22 @@ All notable changes to Roovision will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-01-07
+
+### Fixed
+
+- **Large result content bug** - Fixed issue where subtask results exceeding the read buffer size were being skipped
+  - When a result start pattern is found but the end marker is not in the buffer, the parser now reads ahead in the file to find the complete result
+  - Added `_find_result_end_in_file()` method to read up to 512KB from the result start position to find the end marker
+  - This mirrors the existing behavior for instructions that span buffer boundaries
+
+### Technical
+
+- Parser now properly handles result content that exceeds the incremental read buffer (5MB chunks)
+- Results up to 512KB in length are now supported
+
+---
+
 ## [1.0.1] - 2026-01-07
 
 ### Changed
@@ -68,5 +84,6 @@ Each file contains:
 - Original instruction
 - Subtask result
 
+[1.0.2]: https://github.com/swecjb/roovision/releases/tag/v1.0.2
 [1.0.1]: https://github.com/swecjb/roovision/releases/tag/v1.0.1
 [1.0.0]: https://github.com/swecjb/roovision/releases/tag/v1.0.0

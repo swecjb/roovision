@@ -88,16 +88,29 @@ class Parser:
             result_end_pos = content.find(self.RESULT_END_MARKER, result_content_start)
             
             if result_end_pos == -1:
-                # Result not complete yet (no end marker)
-                print(f"[PARSER]   -> No end marker found, skipping")
-                continue
-            
-            # Calculate absolute position of the end marker in the file
-            absolute_end_position = read_start + result_end_pos
-            print(f"[PARSER]   -> End marker at content offset {result_end_pos}, absolute pos {absolute_end_position}")
-            
-            # Extract result content
-            result_content = content[result_content_start:result_end_pos]
+                # End marker not in current buffer - try reading more from file
+                if filepath:
+                    print(f"[PARSER]   -> End marker not in buffer, reading ahead for {subtask_id}")
+                    result_data = self._find_result_end_in_file(
+                        filepath,
+                        read_start + result_content_start,  # absolute position where result content starts
+                        subtask_id
+                    )
+                    if result_data:
+                        result_content, absolute_end_position = result_data
+                    else:
+                        print(f"[PARSER]   -> No end marker found even after reading file, skipping")
+                        continue
+                else:
+                    print(f"[PARSER]   -> No end marker found, skipping")
+                    continue
+            else:
+                # Calculate absolute position of the end marker in the file
+                absolute_end_position = read_start + result_end_pos
+                print(f"[PARSER]   -> End marker at content offset {result_end_pos}, absolute pos {absolute_end_position}")
+                
+                # Extract result content
+                result_content = content[result_content_start:result_end_pos]
             
             # Find the NEAREST instruction BEFORE this result
             # First try in the current content buffer
@@ -128,6 +141,52 @@ class Parser:
             print(f"[PARSER] Found complete subtask: {subtask_id} (mode: {mode})")
         
         return entries
+    
+    def _find_result_end_in_file(
+        self,
+        filepath: str,
+        result_content_start_position: int,
+        subtask_id: str
+    ) -> Optional[Tuple[str, int]]:
+        """
+        Read ahead in the file to find the result end marker.
+        
+        Args:
+            filepath: Path to the conversation history file
+            result_content_start_position: Absolute file position where result content starts
+            subtask_id: The subtask ID for logging
+        
+        Returns:
+            Tuple of (result_content, absolute_end_position) or None if not found
+        """
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                # Seek to where result content starts
+                f.seek(result_content_start_position)
+                
+                # Read a large chunk to find the end marker
+                # Most results should be within 500KB
+                max_result_size = 512 * 1024  # 512 KB
+                content = f.read(max_result_size)
+            
+            # Find the end marker
+            end_pos = content.find(self.RESULT_END_MARKER)
+            
+            if end_pos == -1:
+                print(f"[PARSER]   -> Result for {subtask_id} exceeds {max_result_size} bytes or has no end marker")
+                return None
+            
+            # Extract the result content
+            result_content = content[:end_pos]
+            absolute_end_position = result_content_start_position + end_pos
+            
+            print(f"[PARSER]   -> End marker found at absolute pos {absolute_end_position}")
+            
+            return (result_content, absolute_end_position)
+            
+        except Exception as e:
+            print(f"[PARSER] Error reading file for result end: {e}")
+            return None
     
     def _find_instruction_in_file(
         self,
